@@ -1,17 +1,29 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+contentRowcontentRow
+    <div id="app" class="container-fluid">
+      <NavBar>
+        <MedianChartCard></MedianChartCard>
+        <ChartContent></ChartContent>
+      </NavBar>
+    </div>
   </div>
 </template>
 
+
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import ChartContent from './components/ChartContent.vue'
+import NavBar from './components/NavLayout.vue'
+import MedianChartCard from './components/MedianChartCard.vue'
 
 export default {
   name: 'app',
   components: {
-    HelloWorld
+    ChartContent,
+    NavBar,
+    MedianChartCard
   }
 }
 </script>
@@ -24,5 +36,8 @@ export default {
   text-align: center;
   color: #2c3e50;
   margin-top: 60px;
+}
+body {
+  background-color: pink !important;
 }
 </style>
