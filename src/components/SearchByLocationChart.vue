@@ -17,7 +17,7 @@
 <script>
 import JapanMap from 'd3-components/JapanMap'
 import * as d3 from 'd3'
-const locationTravelInfo = 'static/locationTravelInfo.json'
+const locationTravelInfo = '../static/locationTravelInfo.json'
  
 export default {
   name: 'SearchByLocationChart',

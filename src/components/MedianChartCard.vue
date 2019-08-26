@@ -5,38 +5,30 @@
 </template>
 
 <script>
-const JapanMap = require('d3-components/JapanMap') // TO DO: fix
-import * as d3 from 'd3';
+// const JapanMap = require('d3-components/JapanMap') // TO DO: fix
+const d3 = require("d3");
+import * as d3scale from 'd3-scale';
+import * as d3array from 'd3-array';
+const parse = require('csv-parse/lib/sync')
+const fsp = require('fs').promises;
+
 export default {
   name: 'MedianChartCard',
   data() {
     return {
-      japan: {},
       yearlydata: {},
       locations: {}
     }
   },
   mounted() {
-    // TO DO: how to fetch local resources using d3@v5
-    var promises = [
-    	d3.json('../static/japan.json'),
-      d3.csvParse('../static/yearlydata.csv') // add date parsing,
-    	d3.csvParse('../static/locations.csv') // add col type parsing
-    ];
-    // TO DO await all at once execute code
-    Promise.all(promises).then(
-      try {
-        res =>
-        {
-          this.japan = responses[0];
-          this.yearlydata = responses[1];
-          this.locations = responses[2];
-          this.drawChart();
-        }
-      catch {
-
-      }   
-    );
+    (async() => {
+      let yd = await fsp.readFile('../static/yearlydata.csv')
+      console.log(yd)
+    this.yearlydata = d3.csv('./static/yearlydata.csv')
+    this.locations = d3.csv('./static/locations.csv') // add date parsing,
+    console.log(this.yearlydata) // add col type parsing
+    this.drawChart();
+    })();
   },
   methods: {
     drawChart: function () {
@@ -47,12 +39,12 @@ export default {
 
       const svg = d3.select('#medianChartContainer')
       	.insert('svg')
-      	.attr('height',height + margin.top + margin.bottom)
-      	.attr('width', width + margin.left + margin.right)
-        .append('g')
+          .attr('height',height + margin.top + margin.bottom)
+          .attr('width', width + margin.left + margin.right)
+            .append('g')
         
       // date scale
-      const x = d3.scaleDate()
+      const x = d3.scaleTime()
         .domain(d3.extent(this.yearlydata.map(d => d.b_date)));
 
       // year scale
@@ -61,9 +53,10 @@ export default {
         .domain(d3.extent(this.yearlydata.map(d=>d.year)));
 
       // location color scale based on longititude
-      // TO DO: choose correct scale, color palette for said scale
-      const longColors = d3.scaleContinuous()
-        .domain(d3.extent(this.yeardata.map(d=>d.lon))
+      // ENHANCE: better palette
+      const longColors = d3.scaleLinear()
+        .range(["brown", "steelblue"])
+        .domain(d3.extent(this.yearlydata.map(d=>d.lon)));
 
       // append axes to chart
       // add the x axis
@@ -79,16 +72,15 @@ export default {
 				.attr('transform', 'translate(0,0)')
 				.call(d3.axisLeft(y))
 
+      console.log(          d3array.group(this.yearlydata, d => d.year)
+)
       // create groups for each year
       const yearGroups = svg.selectAll('.yearGroups')
         .data(
-          d3.nest()
-            .key(d => d.year)
-            // make sure this works without rollup functions
-            .data(this.yearlydata)
+          d3array.group(this.yearlydata, d => d.year)
         )
         .enter().append('g')
-        .attr('y',y(d.key))
+        //.attr('y',y(d => d.key))
       
       // append circles within each year group for each location
       yearGroups.selectAll('.chartLocationCircles')
@@ -96,28 +88,29 @@ export default {
         .data(d => d.values)
         .attr('class','chartLocationCircles')
 				.style('font-size','12pt')
-				.attr('x', x(d.f_date))
+				.attr('x', x(d=> d.f_date))
         .style('fill', d => longColors(d.lon))
       
       // import Map d3 component
       // following must be accessible within this component
       // jpMap.projection
       // jpMap.drawMap(width,height)
-      let miniMap = JapanMap(width=100,height=height)
-      const locationCircles = miniMap.selectAll('.mapLocationCircles')
-        .data(this.locations)
-        .enter().append('circle')
-          .attr('class','.mapLocationCircles')
-          .attr('r',10)
-          .attr('cx',function(d) {
-            return miniMap.projection([d.lon,d.lat])[0]
-          })
-          .attr('cy',function(d) {
-            return miniMap.projection([d.lon,d.lat])[1]
-          })
-          .attr('fill',longColors(d.lon))
+      // let miniMap = JapanMap(width=100,height=height)
+      // const locationCircles = miniMap.selectAll('.mapLocationCircles')
+      //   .data(this.locations)
+      //   .enter().append('circle')
+      //     .attr('class','.mapLocationCircles')
+      //     .attr('r',10)
+      //     .attr('cx',function(d) {
+      //       return miniMap.projection([d.lon,d.lat])[0]
+      //     })
+      //     .attr('cy',function(d) {
+      //       return miniMap.projection([d.lon,d.lat])[1]
+      //     })
+      //     .attr('fill',longColors(d.lon))
         
       // create minimap
   }
  }
+}
 </script>

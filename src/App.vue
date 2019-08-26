@@ -3,7 +3,6 @@
     <div id="app" class="container-fluid">
       <NavBar>
         <MedianChartCard></MedianChartCard>
-        <ChartContent></ChartContent>
       </NavBar>
     </div>
   </div>
@@ -11,18 +10,17 @@
 
 
 <script>
-import ChartContent from './components/ChartContent.vue'
+//import SearchByLocationChart from './components/SearchByLocationChart.vue'
 import NavBar from './components/NavLayout.vue'
 import MedianChartCard from './components/MedianChartCard.vue'
 
 export default {
   name: 'app',
   components: {
-    ChartContent,
+   // SearchByLocationChart,
     NavBar,
     MedianChartCard
-  },
-  mounted: 
+  }
 }
 
 
