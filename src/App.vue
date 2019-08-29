@@ -1,23 +1,24 @@
 <template>
   <div>
-    <div id="app" class="container-fluid">
-      <NavBar>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <div id="app">
+        <nav-bar>
         <MedianChartCard></MedianChartCard>
-      </NavBar>
+        <search-by-location-chart></search-by-location-chart>
+      </nav-bar>
     </div>
   </div>
 </template>
 
 
 <script>
-//import SearchByLocationChart from './components/SearchByLocationChart.vue'
+import SearchByLocationChart from './components/SearchByLocationChart.vue'
 import NavBar from './components/NavLayout.vue'
 import MedianChartCard from './components/MedianChartCard.vue'
-
 export default {
   name: 'app',
   components: {
-   // SearchByLocationChart,
+    SearchByLocationChart,
     NavBar,
     MedianChartCard
   }
@@ -36,6 +37,5 @@ export default {
   margin-top: 60px;
 }
 body {
-  background-color: pink !important;
 }
 </style>

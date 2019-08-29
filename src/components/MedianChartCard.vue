@@ -1,115 +1,140 @@
 <template>
   <div class='row'>
-    <div class='col-md-12 medianChartContainer'></div>
+    <div class='col-9' id='medianChartContainer'></div>
+    <div class='col-3' id='mapContainer'></div>
+    <div class="col-12">
+       Flowers are blooming earlier and earlier every year....
+    </div>
   </div>
 </template>
 
 <script>
-// const JapanMap = require('d3-components/JapanMap') // TO DO: fix
-const d3 = require("d3");
-import * as d3scale from 'd3-scale';
-import * as d3array from 'd3-array';
-const parse = require('csv-parse/lib/sync')
-const fsp = require('fs').promises;
+import { JapanMap } from './d3-components/MapOfJapan';
 
+const d3 = require("d3");
 export default {
   name: 'MedianChartCard',
   data() {
     return {
+      rawjp: {},
+      japan: {},
       yearlydata: {},
       locations: {}
     }
   },
   mounted() {
     (async() => {
-      let yd = await fsp.readFile('../static/yearlydata.csv')
-      console.log(yd)
-    this.yearlydata = d3.csv('./static/yearlydata.csv')
-    this.locations = d3.csv('./static/locations.csv') // add date parsing,
-    console.log(this.yearlydata) // add col type parsing
-    this.drawChart();
+      this.japan  = await d3.json('/japan.geojson')
+      this.yearlydata = await d3.json('/yearlydata.json')
+      this.locations = await d3.json('/locations.json')
+      this.drawChart();
     })();
   },
   methods: {
     drawChart: function () {
       // setup drawing canvas
-      const margin = { top: 0, left: 0, right: 0, bottom: 0},
-      height = 800 - margin.top - margin.bottom,
-      width = 1000 - margin.left - margin.right;
+      const margin = { top: 20, left: 50, right: 50, bottom: 60},
+      height = 600 - margin.top - margin.bottom,
+      width = 700 - margin.left - margin.right;
 
       const svg = d3.select('#medianChartContainer')
       	.insert('svg')
           .attr('height',height + margin.top + margin.bottom)
           .attr('width', width + margin.left + margin.right)
             .append('g')
+              .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
         
       // date scale
+      const parseDate = d3.timeParse('%Y-%m-%d')
       const x = d3.scaleTime()
-        .domain(d3.extent(this.yearlydata.map(d => d.b_date)));
-
+      // TO DO: fix, this doesn't work as intended with dates
+        .domain(d3.extent(this.yearlydata.map(d => parseDate(d.b_daymonth))))
+        .range([0,width])
+      console.log(x)
       // year scale
-      const y = d3.scaleLinear()
-        .range(height, 0)
-        .domain(d3.extent(this.yearlydata.map(d=>d.year)));
+      
+      const y = d3.scalePoint()
+        .domain(this.yearlydata.map(d=>d.year.toString()).reverse())
+        .range([height, 0]);
 
+      console.log(y)
       // location color scale based on longititude
       // ENHANCE: better palette
-      const longColors = d3.scaleLinear()
-        .range(["brown", "steelblue"])
-        .domain(d3.extent(this.yearlydata.map(d=>d.lon)));
+      const longColors = d3.scaleSequential(d3.interpolateRainbow)
+        .domain(d3.extent(this.yearlydata.map(d=> d.lon).filter(d => d > -80)))
+      
+      console.log(longColors)
 
       // append axes to chart
       // add the x axis
-			svg.append('g')
-				.attr('transform', `translate(0, ${this.chartHeight})`)
+      svg.append('g')
+        .attr('class','xAxis')
+				.attr('transform', `translate(0,${height})`)
 				.call(
           d3.axisBottom(x)
 			    .tickFormat(d3.timeFormat('%b %d'))
-					.ticks(7)
+					.ticks(8)
 			  )
-			// add the y Axis
-			svg.append('g')
-				.attr('transform', 'translate(0,0)')
-				.call(d3.axisLeft(y))
+      // add the y Axis
+      const filteredYearTicks = y.domain().filter((d,i) => !(i%5) );
 
-      console.log(          d3array.group(this.yearlydata, d => d.year)
-)
+      svg.append('g')
+        .attr('class','yAxis')
+				.attr('transform', 'translate(0,0)')
+        .call(
+          d3.axisLeft(y)
+          .tickValues(filteredYearTicks)
+        )
+
+      console.log(          
+        d3.nest()
+          .key(d=> d.year.toString())
+          .entries(this.yearlydata)
+      )
       // create groups for each year
       const yearGroups = svg.selectAll('.yearGroups')
         .data(
-          d3array.group(this.yearlydata, d => d.year)
+          d3.nest()
+            .key(d => d.year)
+            .entries(this.yearlydata)
         )
         .enter().append('g')
-        //.attr('y',y(d => d.key))
-      
+          .attr('class','yearGroups')
+          .attr('transform',d => `translate(0, ${y(d.key.toString())})`)
+     
+
       // append circles within each year group for each location
-      yearGroups.selectAll('.chartLocationCircles')
-        .enter().append('circle')
-        .data(d => d.values)
-        .attr('class','chartLocationCircles')
-				.style('font-size','12pt')
-				.attr('x', x(d=> d.f_date))
-        .style('fill', d => longColors(d.lon))
-      
-      // import Map d3 component
-      // following must be accessible within this component
-      // jpMap.projection
-      // jpMap.drawMap(width,height)
-      // let miniMap = JapanMap(width=100,height=height)
-      // const locationCircles = miniMap.selectAll('.mapLocationCircles')
-      //   .data(this.locations)
-      //   .enter().append('circle')
-      //     .attr('class','.mapLocationCircles')
-      //     .attr('r',10)
-      //     .attr('cx',function(d) {
-      //       return miniMap.projection([d.lon,d.lat])[0]
-      //     })
-      //     .attr('cy',function(d) {
-      //       return miniMap.projection([d.lon,d.lat])[1]
-      //     })
-      //     .attr('fill',longColors(d.lon))
+      // TO DO: change to color gradient
+      yearGroups.each((d,i,nodes) => {
+          d3.select(nodes[i]).selectAll('.chartLocationCircles')
+            .data(d=>d.values)
+            .enter()
+              .append('circle')
+                .attr('class','chartLocationCircles')
+                .attr('cx', d => x(parseDate(d.b_daymonth)))
+                .attr('cy',0)
+                .attr('r',2)
+                .style('fill', d => !isNaN(d.lon) ? longColors(d.lon) : "white")  
+      })
+      console.log(this.japan)
         
-      // create minimap
+      const mapContainer = d3.select('#mapContainer')
+      
+      mapContainer
+        .datum(this.japan)
+          .call(JapanMap())
+          
+      const jpProjection = JapanMap().projection()
+      mapContainer.select('svg').selectAll('.mapLocationCircles')
+        .data(this.locations)
+          .enter().append('circle')
+            .attr('class','.mapLocationCircles')
+            .attr('r',3)
+            .attr('cx', d => jpProjection([d.lon,d.lat])[0])
+            .attr('cy', d => jpProjection([d.lon,d.lat])[1])
+            .attr('fill', d => longColors(d.lon))
+
   }
  }
 }

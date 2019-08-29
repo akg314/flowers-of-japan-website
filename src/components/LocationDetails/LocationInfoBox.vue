@@ -1,5 +1,5 @@
 <template>
-  <div class='col-4' id="mapTextBox">
+  <div>
           <div class="row">
           <!--bloom-->
           <div class="row">
@@ -7,7 +7,7 @@
             <table class='table-sm'>
               <thead>
                 <tr>
-                  <th></th>
+                  <th>{{ location }}</th>
                   <th>2019</th>
                 </tr>
               </thead>
@@ -15,14 +15,14 @@
                 <tr>
                   <th>
                     First bloom
-                    &#x1F331
+                    &#x1F331;
                   </th>
                   <td>May 3</td>
                 </tr>
                 <tr>
                   <th>
                     Full bloom
-                    &#x1F338
+                    &#x1F338;
                   </th>
                   <td>May 6</td>
                 </tr>
@@ -30,18 +30,7 @@
             </table>
             </div>
           </div>
-          <!--choice locations-->
-          <div class="row">
-            <p class='col-12 text-center'>Best viewing spots</p>
-            <div class="col-6">
-              Maruyama Park
-              <img class='img-fluid img-thumbnail' src="https://www.japan-guide.com/g3/5316_maruyama.jpg"/>
-            </div>
-            <div class="col-6">
-              Odori Park
-              <img class='img-fluid img-thumbnail' src='https://www.japan-guide.com/g3/5316_odori.jpg'/>
-            </div>
-          </div>
+         
           <!--explore booking options-->
           <div class="row">
             <div class='col-12 text-center'>Let's plan a trip!</div>
@@ -63,7 +52,10 @@
 
 <script>
   export default {
-    name: 'MapInfoContainer'
+    name: 'LocationInfoBox', 
+    props: {
+      location: String
+    }
   }
 </script>
 <style>

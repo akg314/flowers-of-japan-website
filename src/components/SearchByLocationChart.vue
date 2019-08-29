@@ -1,56 +1,82 @@
 <template>
   <div class="row">
-    <div class='col-9 map'>
+    <div class='col-8 map'>
       <div class='col-12 searchBar'>
-        <div class="input-group input-group-sm mb-3">
-          <input value='search by city...' type="text" class="form-control" aria-label="Small" aria-describedby="inputGroup-sizing-sm">
-        </div>
+        <autocomplete 
+        v-if='locations!=null'
+        @input="updateSelectedLocation"
+        :items="locations.map(d=>d.romaji)"></autocomplete>
       </div>
-      <div class='mapContainer'></div>
+      <div id='locationMapContainer'></div>
     </div>
-    <div class='col-3 locationInfo'>
-      <!--location info box here-->
+    <div class='col-4'>
+      <!--should take selected location as prop-->
+      <location-info-box :location='selectedLocation'></location-info-box>
     </div>
   </div>
 </template>
 
 <script>
-import JapanMap from 'd3-components/JapanMap'
+import { JapanMap } from './d3-components/MapOfJapan';
+import Autocomplete from './helper-components/Autocomplete'
+import LocationInfoBox from './LocationDetails/LocationInfoBox'
+
 import * as d3 from 'd3'
-const locationTravelInfo = '../static/locationTravelInfo.json'
  
 export default {
   name: 'SearchByLocationChart',
   data() {
     return {
-      locations: {},
+      locations: null,
+      japan: {},
       selectedLocation: 'Osaka',
-      selectedLocationInfo: {}
+      selectedLocationInfo: {},
+      locationInfoStats: {},
+      projection: null
     }
   },
-  
+  components: {
+    LocationInfoBox, Autocomplete
+  },
   mounted() {
-    let component = this
-    //load locations data; TO DO: FIX SYNTAX
-    this.locations = await d3.csv('../static/geocoded_locations.csv');
-    component.initializeChart()
+    (async() => {
+      this.locationInfoStats  = await d3.json('/locationTravelInfo.json')
+      this.locations = await d3.json('/locations.json')
+      this.japan = await d3.json('/japan.geojson')
+      this.initializeChart();
+    })();
   },
   methods: {
-    updateSelectedLocation: function () {
-      d3.select('JapanMap')
-        
+    // TODO: non selected locations should exit
+    updateSelectedLocation (results) {
+        console.log(results)
 
-      // select jp map by class, change this.selectedLocation
-      // change info in location info container
-      this.selectedLocationInfo = locationTravelInfo.filter(
-        d => d.romaji == this.selectedLocation
-      )
+        const isSelected = (romaji,results) => results.indexOf(romaji) > -1
+        const mapContainer = d3.select('#locationMapContainer')
+        mapContainer.select('svg').selectAll('.mapLocationCircles')
+            .attr('fill', d => 
+              isSelected(d.romaji,results) ? "orange" : 'grey'
+            )
+            .attr('r',
+              d => isSelected(d.romaji,results) ? 10 : 1)
+        this.selectedLocation = results[0]
     },
     initializeChart: function () {
       // draw Japan Map
       // highlight this.selectedLocation
-      JapanMap() // TO DO: call with appropriate width and height
-      updateSelectedLocation()
+      const mapContainer = d3.select('#locationMapContainer')
+      mapContainer
+        .datum(this.japan)
+          .call(JapanMap())
+      this.projection = JapanMap().projection()
+      mapContainer.select('svg').selectAll('.mapLocationCircles')
+          .data(this.locations)
+            .enter().append('circle')
+            .attr('class','mapLocationCircles')
+            .attr('r',2)
+            .attr('cx', d => this.projection([d.lon,d.lat])[0])
+            .attr('cy', d => this.projection([d.lon,d.lat])[1])
+            .attr('fill','grey')
     }
   }
 }
